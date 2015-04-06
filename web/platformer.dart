@@ -1,7 +1,8 @@
 import 'dart:html';
+import 'level_layout.dart';
 import 'level.dart';
 import 'utils.dart';
-import 'entities.dart';
+import 'actor.dart';
 import '../packages/unittest/unittest.dart';
 
 CanvasRenderingContext2D ctx;
@@ -14,20 +15,15 @@ void main() {
   canvas.width = CANVAS_WIDTH;
   canvas.height = CANVAS_HEIGHT;
   ctx = canvas.context2D;
-  var data = {
-    "stoneImg": new ImageElement(src: "img/cobblestone.png"),
-    "clothImg": new ImageElement(src: "img/stone.png"),
-    "tileImg": new ImageElement(src: "img/stonebits.png")
-  };
-  makeLevel(data);
+  makeLevel();
 }
 
-void makeLevel(dynamic data) {
-  Level level = new Level(57, 31, ctx);
-  level.fill();
-  level.draw(data);
-  Player player = new Player();
-  player.x = 0;
-  player.y = 0;
-  player.draw(ctx);
+void makeLevel() {
+  Level level = new Level(new LevelLayout(57, 31, ctx), [new Enemy()..x=4..y=4]);
+  level.draw(ctx);
+  loop(level);
+}
+
+void loop(Level level) {
+  
 }
