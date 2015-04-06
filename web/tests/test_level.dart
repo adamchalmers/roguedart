@@ -1,4 +1,4 @@
-import '../class_level.dart';
+import '../level.dart';
 import '../../packages/unittest/unittest.dart';
 
 void main() {

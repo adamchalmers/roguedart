@@ -37,3 +37,21 @@ class Merges {
     });
   }
 }
+
+class Point {
+  int x, y;
+  Point(_x, _y) { x = _x; y = _y;}
+  bool operator ==(other) {
+    if (other is! Point) return false;
+    Point point = other;
+    return (point.x == x && point.y == y);
+  }
+  int get hashCode {
+    int result = 17;
+    result = 37*result + x.hashCode;
+    result = 37*result + y.hashCode;
+    return result;
+  }
+  String toString() => "($x,$y)";
+}
+Pt(int x, int y) { return new Point(x,y);}
