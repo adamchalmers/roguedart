@@ -5,37 +5,26 @@ import '../packages/unittest/unittest.dart';
 
 CanvasRenderingContext2D ctx;
 CanvasElement canvas;
-const CANVAS_WIDTH = 1500;
-const CANVAS_HEIGHT = 700;
+const CANVAS_WIDTH = 1800;
+const CANVAS_HEIGHT = 1000;
 
 void main() {
-  tests();
   canvas = querySelector("#canvas") as CanvasElement;
   canvas.width = CANVAS_WIDTH;
   canvas.height = CANVAS_HEIGHT;
   ctx = canvas.context2D;
-  
-  Level level = new Level(21, 21, ctx);
-  level.placeRooms(20, 400);
-  level.placeCorridors();
-  level.merge();
-  level.draw();
-  
-  Merges m = new Merges(4);
-  print(m.merges);
-  m.merge(1,2);
-  m.merge(3,4);
-  print(m.merges);
-  m.merge(1,3);
-  print(m.merges);
-  
+  var data = {
+    "stoneImg": new ImageElement(src: "img/stone.jpg"),
+    "clothImg": new ImageElement(src: "img/cloth.jpg"),
+    "tileImg": new ImageElement(src: "img/tile.jpg")
+  };
+  makeLevel(data);
 }
 
-void tests() {
-  test("PointEquals", () => expect(true, Pt(0,0) == Pt(0,0)));
-  test("PointSets", () => () {
-    Set s = new Set();
-    s.add(Pt(0,0));
-    expect(true, s.contains(Pt(0,0)));
-  });
+void makeLevel(dynamic data) {
+  Level level = new Level(57, 31, ctx);
+  level.placeRooms(40, 400);
+  level.placeCorridors(10, 2000);
+  level.merge();
+  level.draw(data);
 }

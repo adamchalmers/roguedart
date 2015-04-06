@@ -31,7 +31,7 @@ class Merges {
     // Any region that used to point to a or b will now point to smaller
     int smaller = min(a,b);
     merges.forEach((k, v) {
-      if (v == a || v == b) {
+      if (v == merges[a] || v == merges[b]) {
         merges[k] = smaller;
       }
     });

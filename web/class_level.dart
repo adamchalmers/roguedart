@@ -6,7 +6,7 @@ import 'dart:math';
 import 'utils.dart';
 
 
-const TILE_LENGTH = 20;
+const TILE_LENGTH = 30;
 const TILE_BORDER = 1;
 
 class Level {
@@ -32,35 +32,44 @@ class Level {
     }
   }
   
-  draw() {
+  draw(dynamic data) {
     ctx.fillStyle = "#000";
     ctx.fillRect(0, 0, w*TILE_LENGTH + TILE_BORDER, h*TILE_LENGTH + TILE_BORDER);
     for (int i = 0; i < w; i++) {
       for (int j = 0; j < h; j++) {
         ctx.fillStyle = grid[i][j].color;
-        ctx.fillRect(
-            i*TILE_LENGTH + TILE_BORDER, 
-            j*TILE_LENGTH + TILE_BORDER, 
-            TILE_LENGTH - TILE_BORDER, 
-            TILE_LENGTH - TILE_BORDER);
-        
-        // Print a room's region
-        if (region[i][j] > 0) {
-          ctx.fillStyle = "blue";
-          ctx.font = "bold 16px Arial";
-          ctx.fillText(
-              region[i][j].toString(), 
-              i*TILE_LENGTH, 
-              (j+1)*TILE_LENGTH);
-        } else if (connectors.containsKey(Pt(i,j))){
-          // Print the empty cell neighbours
-          ctx.fillStyle = "white";
-          ctx.font = "8px Arial";
-          ctx.fillText(
-              connectors[Pt(i,j)].toString(), 
-              i*TILE_LENGTH, 
-              (j+1)*TILE_LENGTH);
+        if (grid[i][j] == Room.CORRIDOR) {
+          ctx.drawImage(data["stoneImg"], i*TILE_LENGTH + TILE_BORDER, j*TILE_LENGTH + TILE_BORDER);
+        } else if (grid[i][j] == Room.ROOM) {
+          ctx.drawImage(data["tileImg"], i*TILE_LENGTH + TILE_BORDER, j*TILE_LENGTH + TILE_BORDER);
+        } else if (grid[i][j] == Room.DOOR) {
+          ctx.drawImage(data["clothImg"], i*TILE_LENGTH + TILE_BORDER, j*TILE_LENGTH + TILE_BORDER);
+        } else {
+          ctx.fillRect(
+              i*TILE_LENGTH + TILE_BORDER, 
+              j*TILE_LENGTH + TILE_BORDER, 
+              TILE_LENGTH - TILE_BORDER, 
+              TILE_LENGTH - TILE_BORDER);
         }
+        
+        
+//        // Print a room's region
+//        if (region[i][j] > 0) {
+//          ctx.fillStyle = "blue";
+//          ctx.font = "bold 16px Arial";
+//          ctx.fillText(
+//              region[i][j].toString(), 
+//              i*TILE_LENGTH, 
+//              (j+1)*TILE_LENGTH);
+//        } else if (connectors.containsKey(Pt(i,j))){
+//          // Print the empty cell neighbours
+//          ctx.fillStyle = "white";
+//          ctx.font = "14px Arial";
+//          ctx.fillText(
+//              connectors[Pt(i,j)].toString().substring(1, connectors[Pt(i,j)].toString().length-1).replaceAll(" ", ""), 
+//              i*TILE_LENGTH, 
+//              (j+1)*TILE_LENGTH);
+//        }
       }
     }
   }
@@ -74,14 +83,14 @@ class Level {
     return out;
   }
   
-  placeCorridors() {
-    for (int i = 0; i < 4; i++) {
-      placeCorridor();
+  placeCorridors(int corridors, int maxTries) {
+    for (int i = 0; i < corridors; i++) {
+      placeCorridor(maxTries);
       currRegions ++;
     }
   }
   
-  placeCorridor() {
+  placeCorridor(int maxTries) {
     
     // Initialize data structures
     var random = new Random();
@@ -94,7 +103,7 @@ class Level {
     int tries = 0;
     while (grid[start.x][start.y] != Room.EMPTY || start.x % 2 == 0 || start.y %2 == 0) {
       start = Pt(random.nextInt(w), random.nextInt(w));
-      if (tries++ > 1000) return;
+      if (tries++ > maxTries) return;
     }
     parents[start] = start;
     q.add(start);
@@ -190,12 +199,9 @@ class Level {
   
   void merge() {
     // Maps a region to the lowest-number region it's merged with
-    Map<int, int> regions = new Map<int, int>();
+    Merges regions = new Merges(currRegions);
     // Maps connector cells to the set of their neighbouring regions.
     connectors = new Map<Point, Set<int>>();
-    for (int i = 1; i <= currRegions; i++) {
-      regions[i] = i;
-    }
     
     // Find every connector and which regions it connects.
     for (int i = 0; i < w; i++) {
@@ -224,22 +230,32 @@ class Level {
     
     // Choose a random connector
     Random rnd = new Random();
-    Point cell = connectors.keys.elementAt(rnd.nextInt(connectors.length));
-    // Make it a corridor
-    int newRegion = min(connectors[cell].elementAt(0), connectors[cell].elementAt(1));
-    grid[cell.x][cell.y] = Room.CORRIDOR;
-    region[cell.x][cell.y] = newRegion;
-    regions[connectors[cell].elementAt(0)] = newRegion;
-    regions[connectors[cell].elementAt(1)] = newRegion;
-    
+    while (connectors.isNotEmpty) {
+      Point cell = connectors.keys.elementAt(rnd.nextInt(connectors.length));
+      int r1 = connectors[cell].elementAt(0);
+      int r2 = connectors[cell].elementAt(1);
+      // Make it a corridor
+      regions.merge(r1, r2);
+      grid[cell.x][cell.y] = Room.DOOR;
+      region[cell.x][cell.y] = regions.merges[r1];
+      // Remove all connectors that would have joined those two regions.
+      Map newConnectors = new Map<Point, Set<int>>();
+      connectors.forEach((pt, regions) {
+        if (!regions.contains(r1) || !regions.contains(r2)) {
+          newConnectors[pt] = regions;
+        }
+      });
+      connectors = newConnectors;
+    }
   }
 }
 
 class Room {
   
-  static final Room ROOM = new Room("#fa0", "ROOM");
+  static final Room ROOM = new Room("#ffa", "ROOM");
   static final Room EMPTY = new Room("#444", "EMPTY");
-  static final Room CORRIDOR = new Room("#ef7", "CORRIDOR");
+  static final Room CORRIDOR = new Room("#79f", "CORRIDOR");
+  static final Room DOOR = new Room("#f7c", "DOOR");
   
   String color;
   String name;
